@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/src/controllers/consultarCategorias.dart';
+import 'package:flutter_application_1/src/screens/Productos.dart';
 
 class Menuprincipal extends StatelessWidget {
-  const Menuprincipal({Key? key});
+  const Menuprincipal({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final ProductsController controller = ProductsController();
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.lightBlue[400],
@@ -15,34 +19,48 @@ class Menuprincipal extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("Mercado Libre"),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/login');
-                },
-                child: Text("Iniciar Sesion"),
-                style: ElevatedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.lightBlue[400],
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/registro');
-                },
-                child: Text("Registrarse"),
-                style: ElevatedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.lightBlue[400],
-                ),
-              )
             ],
           ),
+        ),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.lightBlue[400],
+              ),
+              child: Text(
+                'Menú',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: Icon(Icons.login),
+              title: Text('Iniciar Sesión'),
+              onTap: () {
+                Navigator.pushNamed(context, '/login');
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.person_add),
+              title: Text('Registrarse'),
+              onTap: () {
+                Navigator.pushNamed(context, '/registro');
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.people),
+              title: Text('Usuarios'),
+              onTap: () {
+                Navigator.pushNamed(context, '/users');
+              },
+            ),
+          ],
         ),
       ),
       body: Padding(
@@ -65,45 +83,101 @@ class Menuprincipal extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: 10),
-                IconButton(onPressed: () {}, icon: Icon(Icons.favorite_border)),
-                IconButton(onPressed: () {}, icon: Icon(Icons.notifications))
+                IconButton(
+                    onPressed: () {},
+                    icon: Icon(Icons.production_quantity_limits_rounded)),
+                IconButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/perfil');
+                    },
+                    icon: Icon(Icons.person)),
               ],
             ),
             SizedBox(height: 12),
             Expanded(
-              child: GridView.builder(
-                padding: EdgeInsets.all(10),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                ),
-                itemCount: categories.length,
-                itemBuilder: (BuildContext context, int index) {
-                  return GestureDetector(
-                    onTap: () {
-                      if (categories[index]['titulo'] == 'Hogar y muebles') {
-                        Navigator.pushNamed(context, '/productosHogar');
-                      } else {
-                        // Implementa la navegación para otras categorías si es necesario
-                      }
-                    },
-                    child: Card(
-                      color: Colors.lightBlue[400],
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(categories[index]["icono"],
-                              size: 40.0, color: Colors.white),
-                          SizedBox(height: 5.0),
-                          Text(
-                            categories[index]['titulo'],
-                            textAlign: TextAlign.center,
-                            style:
-                                TextStyle(fontSize: 12.0, color: Colors.white),
-                          ),
-                        ],
+              child: FutureBuilder<List<Categorie>>(
+                future: controller.consultarCategoria(), 
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return Center(child: Text('No hay categorías disponibles'));
+                  } else {
+                    final categories = snapshot.data!;
+                    return GridView.builder(
+                      padding: EdgeInsets.all(10),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
                       ),
-                    ),
-                  );
+                      itemCount: categories.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        IconData categoryIcon;
+                        switch (categories[index].nombre.toLowerCase()) {
+                          case 'electrodomésticos':
+                            categoryIcon = Icons.devices;
+                            break;
+                          case 'muebles':
+                            categoryIcon = Icons.chair;
+                            break;
+                          case 'ropa':
+                            categoryIcon = Icons.checkroom;
+                            break;
+                          default:
+                            categoryIcon = Icons.category;
+                        }
+
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => Productos(
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.lightBlue[400],
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.2),
+                                  spreadRadius: 2,
+                                  blurRadius: 8,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  categoryIcon,
+                                  color: Colors.white,
+                                  size: 40,
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  categories[index].nombre,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 14.0,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  }
                 },
               ),
             ),
@@ -132,17 +206,3 @@ class Menuprincipal extends StatelessWidget {
     );
   }
 }
-
-final List<Map<String, dynamic>> categories = [
-  {'codigo': '001', 'icono': Icons.home, 'titulo': 'Hogar y muebles'},
-  {'codigo': '002', 'icono': Icons.phone_android, 'titulo': 'Celulares'},
-  {'codigo': '003', 'icono': Icons.checkroom, 'titulo': 'Ropa y accesorios'},
-  {'codigo': '004', 'icono': Icons.computer, 'titulo': 'Computación'},
-  {'codigo': '005', 'icono': Icons.kitchen, 'titulo': 'Electro Hogar'},
-  {'codigo': '006', 'icono': Icons.sports_soccer, 'titulo': 'Deportes'},
-  {'codigo': '007', 'icono': Icons.build, 'titulo': 'Herramientas'},
-  {'codigo': '008', 'icono': Icons.brush, 'titulo': 'Belleza'},
-  {'codigo': '009', 'icono': Icons.tv, 'titulo': 'Electrónica y audio'},
-  {'codigo': '010', 'icono': Icons.fastfood, 'titulo': 'Alimentos y bebidas'},
-  {'codigo': '011', 'icono': Icons.pets, 'titulo': 'Animales y mascotas'},
-];
